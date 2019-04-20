@@ -43,6 +43,43 @@ function module.sensor(cfg)
             error("property "..prop.name.." already defined for sensor "..cfg.name)
         end
 
+        if prop.metric or (cfg.default_metric and prop.metric ~= false) then
+            local user_cfg = prop.metric or cfg.default_metric
+
+            local prometheus = require("envel.metrics.prometheus")
+            local metric_config = {};
+
+            if type(user_cfg) == 'string' then
+                metric_config.type = user_cfg
+            elseif type(user_cfg) == 'table' then
+                metric_config = prop.metric
+            else
+                error("Invalid type form sensor.metric")
+            end
+
+            if not metric_config.type and type(cfg.default_metric) == 'string' then
+                metric_config.type = cfg.default_metric
+            end
+
+            if not metric_config.name then
+                metric_config.name = prop.name
+            end
+
+            if not metric_config.namespace then
+                metric_config.namespace = "sensors"
+            end
+
+            if not metric_config.subsystem then
+                metric_config.subsystem = cfg.name
+            end
+
+            prop.__metric = prometheus(metric_config)
+        end
+
+        if cfg.distinct ~= nil and prop.distinct == nil then
+            prop.distinct = cfg.distinct
+        end
+
         sensor.__allowed_properties[prop.name] = prop
         prop_count = prop_count + 1
     end
@@ -140,6 +177,10 @@ function module.sensor(cfg)
             end
 
             if has_changed then
+                if sensor.__allowed_properties[k].__metric and type(v) == 'number' then
+                    sensor.__allowed_properties[k].__metric:set(v)
+                end
+
                 sensor.__properties[k] = v
                 t:emit_signal("sensor::property", sensor, k, v, sensor.__allowed_properties[k])
                 t:emit_signal("property::"..k, v)

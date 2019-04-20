@@ -6,6 +6,7 @@ local hs1xx = require("envel.platform.tplink.hs1xx")
 local owm = require("openweathermap")
 local notify = dbus.notify
 local config = require("config")
+local spawn = require("envel.spawn")
 
 local mqtt = mqtt_connect {
     broker = "tcp://localhost:1883",
@@ -17,6 +18,11 @@ local weather = owm(config.owm.key, config.owm.location, config.owm.units)
 local plug = hs1xx(config.plug.ip)
 local plug_sensor = device.sensor {
     name = "laundry",
+    default_metric = "gauge",
+    distinct = false,
+    {
+        name = "load",
+    },
     {
         name = "relay_state",
         from_signal = {plug, "state"}
@@ -63,6 +69,8 @@ local plug_sensor = device.sensor {
 
 local weather_sensor = device.sensor {
     name  = "weather",
+    default_metric = "gauge",
+    distinct = false,
     unpack(weather:common_sensor_properties())
 }
 
@@ -115,6 +123,7 @@ end)
 -- when running
 local washer_status = false
 plug_sensor:connect_signal("property::is_running", function(running)
+
     if running == false and running ~= washer_status then
         notify {
             title = "Home",
@@ -145,4 +154,16 @@ mqtt:subscribe {
 mqtt:subscribe {
     topic = "laundry_washer/off",
     callback = function() plug:turn_off() end
+}
+
+spawn.watch {
+    cmd = "cat /proc/loadavg",
+    timeout = 2,
+    line_callback = function(out)
+        if out == nil then return end
+        for v in string.gmatch(out, "%S+") do
+            plug_sensor.load = tonumber(v)
+            break
+        end
+    end
 }

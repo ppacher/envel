@@ -22,6 +22,7 @@ func Loader(L *lua.LState) int {
 
 	AddNotify(L, t)
 	AddObject(L, t)
+	AddSecret(L, t)
 
 	L.Push(t)
 	return 1

@@ -10,6 +10,7 @@ import (
 	"github.com/ppacher/envel/pkg/bindings/core"
 	"github.com/ppacher/envel/pkg/bindings/dbus"
 	"github.com/ppacher/envel/pkg/bindings/http"
+	"github.com/ppacher/envel/pkg/bindings/metrics/prometheus"
 	"github.com/ppacher/envel/pkg/bindings/mqtt"
 	"github.com/ppacher/envel/pkg/bindings/platforms/tplink"
 	"github.com/ppacher/envel/pkg/bindings/signal"
@@ -37,6 +38,7 @@ func main() {
 			mqtt.Preload(L)
 			http.Preload(L)
 			tplink.PreloadPlatform(L)
+			prometheus.Preload(L)
 
 			sensors.OpenSensorRegistry(L, registry)
 
