@@ -83,6 +83,23 @@ func newMQTT(L *lua.LState) int {
 		L.ArgError(1, "clean_session must be nil or boolean")
 	}
 
+	usernameValue := opts.RawGetString("username")
+	if c, ok := usernameValue.(lua.LString); ok {
+		cfg.SetUsername(string(c))
+	} else if usernameValue != lua.LNil {
+		L.ArgError(1, "username must be nil or a string")
+	}
+
+	passwordValue := opts.RawGetString("password")
+	if c, ok := passwordValue.(lua.LString); ok {
+		cfg.SetPassword(string(c))
+	} else if passwordValue != lua.LNil {
+		L.ArgError(1, "password must be nil or a string")
+	}
+
+	// we always enable auto-reconnect
+	cfg.SetAutoReconnect(true)
+
 	mq, err := NewMQTTClient(cfg)
 	if err != nil {
 		L.RaiseError("mqtt: %s", err.Error())
