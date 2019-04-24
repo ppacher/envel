@@ -64,7 +64,7 @@ func httpDo(L *lua.LState) int {
 
 	method := assertString(L, request, "method")
 	urlS := assertString(L, request, "url")
-	body := assertString(L, request, "url")
+	body := assertString(L, request, "body")
 	headers := assertTable(L, request, "headers", nil)
 
 	httpHeader := make(http.Header)
