@@ -11,7 +11,7 @@ import (
 
 // Preload preloads the event.metrics.prometheus library
 func Preload(L *lua.LState) {
-	L.PreloadModule("envel.metrics.prometheus", Loader)
+	L.PreloadModule("envel.bindings.metrics.prometheus", Loader)
 }
 
 var metricTypeMap = map[string]lua.LGFunction{

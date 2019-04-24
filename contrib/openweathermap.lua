@@ -2,7 +2,6 @@ local http   = require("envel.http")
 local timer  = require("envel.timer")
 local signal = require("envel.signal")
 local json   = require("json")
-
 -- class for openweathermap clients
 local weather_cls = {}
 

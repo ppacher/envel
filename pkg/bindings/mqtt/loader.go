@@ -6,7 +6,7 @@ import (
 
 // Preload reloads the envel.mqtt package
 func Preload(L *lua.LState) {
-	L.PreloadModule("envel.mqtt", Loader)
+	L.PreloadModule("envel.bindings.mqtt", Loader)
 }
 
 func PreloadWithName(name string, L *lua.LState) {

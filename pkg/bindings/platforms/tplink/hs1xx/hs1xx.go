@@ -20,7 +20,7 @@ import (
 const hs1xxxTypeName = "tplink_hs1xxx"
 
 func Preload(L *lua.LState) {
-	L.PreloadModule("envel.platform.tplink.hs1xx", Loader)
+	L.PreloadModule("envel.bindings.platform.tplink.hs1xx", Loader)
 }
 
 func PreloadWithName(name string, L *lua.LState) {

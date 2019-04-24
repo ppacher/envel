@@ -6,7 +6,25 @@ local hs1xx = require("envel.platform.tplink.hs1xx")
 local owm = require("openweathermap")
 local notify = dbus.notify
 local config = require("config")
-local spawn = require("envel.spawn")
+local new_pushover = require("pushover")
+local rule = require("envel.rules")
+
+local notifier = new_pushover({
+    user  = config.pushover.user,
+    key = config.pushover.key,
+    sound = "none",
+})
+
+--[[
+notifier:notify({
+    text = "<b>Hello from here<b>",
+    title = "Test",
+    html = true,
+    url = 'https://grafana.ppacher.at',
+    url_title = 'test',
+    priority = 'critical',
+})
+--]]
 
 local mqtt = mqtt_connect {
     broker = "tcp://localhost:1883",
@@ -19,10 +37,7 @@ local plug = hs1xx(config.plug.ip)
 local plug_sensor = device.sensor {
     name = "laundry",
     default_metric = "gauge",
-    distinct = false,
-    {
-        name = "load",
-    },
+    distinct = false, -- only used when emitting signals, prometheus metrics will always be updated
     {
         name = "relay_state",
         from_signal = {plug, "state"}
@@ -136,6 +151,25 @@ end)
 
 -- }}
 
+-- {{ Rules
+rule {
+    name = "test rule",
+    trigger = {
+        rule.onSignal(weather, "weather::temp_min"),
+        rule.onPropertyChange(plug_sensor, "is_running"),
+        rule.onInterval(10),
+    },
+    when = function()
+        print("when")
+        return true
+    end,
+    action = function()
+        notify{title = "foo", text = "it works"}
+    end
+}
+
+-- }}
+
 weather:watch()
 
 -- poll the relay status every 3 seconds
@@ -154,16 +188,4 @@ mqtt:subscribe {
 mqtt:subscribe {
     topic = "laundry_washer/off",
     callback = function() plug:turn_off() end
-}
-
-spawn.watch {
-    cmd = "cat /proc/loadavg",
-    timeout = 2,
-    line_callback = function(out)
-        if out == nil then return end
-        for v in string.gmatch(out, "%S+") do
-            plug_sensor.load = tonumber(v)
-            break
-        end
-    end
 }

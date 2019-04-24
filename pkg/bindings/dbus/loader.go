@@ -9,7 +9,7 @@ import (
 //
 //  local plugin = require("plugin")
 func Preload(L *lua.LState) {
-	L.PreloadModule("envel.dbus", Loader)
+	L.PreloadModule("envel.bindings.dbus", Loader)
 }
 
 func PreloadWithName(name string, L *lua.LState) {

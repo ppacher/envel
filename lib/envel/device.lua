@@ -15,7 +15,7 @@ end
 
 -- registers the sensor at the hosting application
 local function register_sensor(sensor)
-
+    local _ = sensor
 end
 
 -- sensor creates and registers a new sensor
@@ -133,8 +133,7 @@ function module.sensor(cfg)
 
             -- if we should even emit the value if it's the same as before we always
             -- set has_changed to true
-            local has_changed = sensor.__properties[k] ~= v or sensor.__allowed_properties[k].distinct == false
-
+            local has_changed = sensor.__properties[k] ~= v
             local deadband = sensor.__allowed_properties[k].deadband
             local current = sensor.__properties[k]
 
@@ -181,9 +180,12 @@ function module.sensor(cfg)
                     sensor.__allowed_properties[k].__metric:set(v)
                 end
 
+                -- if distict is set, only emit a signal if the property changed
+                if sensor.__allowed_properties[k].distinct == false and sensor.__properties[k] ~= v then
+                    t:emit_signal("sensor::property", sensor, k, v, sensor.__allowed_properties[k])
+                    t:emit_signal("property::"..k, v)
+                end
                 sensor.__properties[k] = v
-                t:emit_signal("sensor::property", sensor, k, v, sensor.__allowed_properties[k])
-                t:emit_signal("property::"..k, v)
             end
         end,
 

@@ -16,7 +16,7 @@ import (
 )
 
 func Preload(L *lua.LState) {
-	L.PreloadModule("envel.http", Loader)
+	L.PreloadModule("envel.bindings.http", Loader)
 }
 
 func Loader(L *lua.LState) int {

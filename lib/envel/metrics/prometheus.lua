@@ -1,0 +1,1 @@
+return require("envel.bindings.metrics.prometheus")

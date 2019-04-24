@@ -11,7 +11,7 @@ import (
 const tplinkAPITypeName = "tplink_api"
 
 func Preload(L *lua.LState) {
-	L.PreloadModule("envel.platform.tplink.api", Loader)
+	L.PreloadModule("envel.bindings.platform.tplink.api", Loader)
 }
 
 func Loader(L *lua.LState) int {
