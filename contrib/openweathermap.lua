@@ -38,6 +38,11 @@ function weather_cls:update_current(cb)
         self:emit_signal("weather::temp_max", payload.main.temp_max)
         self:emit_signal("weather::sunrise", payload.sys.sunrise)
         self:emit_signal("weather::sunset", payload.sys.sunset)
+        if payload.wind then
+            self:emit_signal("weather::windspeed", payload.wind.speed)
+            self:emit_signal("weather::winddeg", payload.wind.deg)
+        end
+
         if type(cb) == 'function' then
             cb(payload)
         end
@@ -100,6 +105,16 @@ function weather_cls:common_sensor_properties()
             name = "sunset",
             unit = "s",
             from_signal = {self, "weather::sunset"},
+        },
+        {
+            name = "wind_speed",
+            unit = "ms",
+            from_signal = {self, "weather::windspeed"}
+        },
+        {
+            name = "wind_deg",
+            unit = "°",
+            from_signal = {self, "weather::winddeg"}
         }
     }
 end
