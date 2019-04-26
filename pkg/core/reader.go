@@ -7,7 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/ppacher/envel/pkg/bindings/callback"
+	"github.com/ppacher/envel/pkg/callback"
 	lua "github.com/yuin/gopher-lua"
 )
 

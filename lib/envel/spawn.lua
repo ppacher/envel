@@ -1,3 +1,6 @@
+--- Module spawn also to call external processes in an asynchronous manner which does not
+-- block the event loop of envel
+
 local exec = _G.__core.exec
 local timer = require("envel.timer")
 

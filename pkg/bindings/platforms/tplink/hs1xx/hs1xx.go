@@ -8,11 +8,11 @@ import (
 
 	tpsmartapi "github.com/ppacher/tplink-hs1xx"
 
-	"github.com/ppacher/envel/pkg/bindings/callback"
-	"github.com/ppacher/envel/pkg/bindings/core"
+	"github.com/ppacher/envel/pkg/callback"
+	"github.com/ppacher/envel/pkg/core"
 	"github.com/ppacher/envel/pkg/loop"
 
-	"github.com/ppacher/envel/pkg/bindings/signal"
+	"github.com/ppacher/envel/pkg/signal"
 	hs1xx "github.com/ppacher/tplink-hs1xx/plug"
 	lua "github.com/yuin/gopher-lua"
 )

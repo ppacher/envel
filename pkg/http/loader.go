@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ppacher/envel/pkg/bindings/core"
+	"github.com/ppacher/envel/pkg/core"
 
 	lua "github.com/yuin/gopher-lua"
 )

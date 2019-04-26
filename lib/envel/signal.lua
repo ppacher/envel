@@ -1,3 +1,5 @@
+--- Module signal
+
 local methods = {}
 
 --- emit returns a callback function that emits the given `signal`

@@ -3,7 +3,7 @@ package core
 import (
 	"testing"
 
-	helper "github.com/ppacher/envel/pkg/bindings/testing"
+	helper "github.com/ppacher/envel/pkg/testing"
 	"github.com/ppacher/envel/pkg/loop"
 	lua "github.com/yuin/gopher-lua"
 )

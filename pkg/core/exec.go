@@ -5,7 +5,7 @@ import (
 	"syscall"
 
 	shellquote "github.com/kballard/go-shellquote"
-	"github.com/ppacher/envel/pkg/bindings/callback"
+	"github.com/ppacher/envel/pkg/callback"
 	lua "github.com/yuin/gopher-lua"
 )
 

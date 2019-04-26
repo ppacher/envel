@@ -1,3 +1,4 @@
+-- Module envel provides access to native bindings provided by envel
 return {
     signal = require("envel.signal"),
     timer = require("envel.timer"),

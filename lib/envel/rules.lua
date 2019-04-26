@@ -1,4 +1,24 @@
---[[ Example Rule
+--------------------------------------------------------------------
+-- Module envel.rules provides a simple rule base DSL for handling
+-- events
+--
+-- Syntax
+-- ===
+--
+-- The syntax of rules always looks like the following example:
+-- @usage Syntax
+--
+--      rule{
+--          name = "name of the rule"
+--      }
+--
+--
+-- @module envel.rules
+-- @author   Patrick Pacher
+--------------------------------------------------------------------
+
+--[[
+@example -
 
 local was_running = false
 rule{
@@ -32,6 +52,7 @@ rule {
 f:connect_signal("changed", function(e) print(e) end )
 
 --]]
+
 
 local rule_class = {}
 
@@ -75,7 +96,7 @@ end
 
 --- Creates a new rule
 -- @param rule  The rule description to create
--- @returns A rule
+-- @return A rule
 local function create_rule(rule)
     local newinst = {
         name = rule.name,
@@ -111,13 +132,13 @@ setmetatable(module.rules, {
 -- @param cb The callback function to invoke when triggered
 -- @return A function to call to remove the registration
 --
--- @example: function(cb) return singal:connect_signal("foo", cb) end
+-- @usage: function(cb) return singal:connect_signal("foo", cb) end
 --
 
 --- Returns a trigger function that connects to a signal
 -- @param obj       The object that emits the signal
 -- @param signal    The signal to subscribe to
--- @returns         trigger function
+-- @return         trigger function
 function module.onSignal(obj, signal)
     return function(cb)
         obj:connect_signal(signal, cb)
@@ -129,7 +150,7 @@ end
 --- Returns a trigger function that connects to a property changesignal
 -- @param obj       The object that emits the signal
 -- @param property  The property to subscribe to
--- @returns         trigger function
+-- @return         trigger function
 function module.onPropertyChange(obj, property)
     return module.onSignal(obj, "property::"..property)
 end
@@ -138,14 +159,14 @@ end
 --- Returns a trigger function that triggers whenever the provided
 -- timer ticks
 -- @param timer     The time object
--- @returns         trigger function
+-- @return         trigger function
 function module.onTimer(timer)
     return module.onSignal(timer, "timer::tick")
 end
 
 --- Returns a trigger function that runs the rule every given interval
 -- @param interval      Number of seconds between rule executions
--- @returns             trigger function
+-- @return             trigger function
 function module.onInterval(interval)
     return function(cb)
         local t = require("envel.timer"){
@@ -164,7 +185,7 @@ end
 
 --- Verifies if the provided rule has every thing setup correctly
 -- @param rule  The rule to verify
--- @returns A string describing an error or nil
+-- @return A string describing an error or nil
 function module:verify_rule(rule)
     local _ = self
 

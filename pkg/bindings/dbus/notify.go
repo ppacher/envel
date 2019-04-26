@@ -3,7 +3,7 @@ package dbus
 import (
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus"
-	"github.com/ppacher/envel/pkg/bindings/signal"
+	"github.com/ppacher/envel/pkg/signal"
 	lua "github.com/yuin/gopher-lua"
 )
 

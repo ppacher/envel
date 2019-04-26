@@ -3,7 +3,7 @@ package dbus
 import (
 	"testing"
 
-	helper "github.com/ppacher/envel/pkg/bindings/testing"
+	helper "github.com/ppacher/envel/pkg/testing"
 	lua "github.com/yuin/gopher-lua"
 )
 

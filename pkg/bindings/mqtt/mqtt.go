@@ -4,7 +4,7 @@ import (
 	"log"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/ppacher/envel/pkg/bindings/callback"
+	"github.com/ppacher/envel/pkg/callback"
 	"github.com/ppacher/envel/pkg/loop"
 	lua "github.com/yuin/gopher-lua"
 )

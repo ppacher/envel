@@ -3,7 +3,7 @@ package dbus
 import (
 	"github.com/godbus/dbus"
 	luar "github.com/layeh/gopher-luar"
-	"github.com/ppacher/envel/pkg/bindings/callback"
+	"github.com/ppacher/envel/pkg/callback"
 	"github.com/ppacher/envel/pkg/loop"
 	lua "github.com/yuin/gopher-lua"
 )

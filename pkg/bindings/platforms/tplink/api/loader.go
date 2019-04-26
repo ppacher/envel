@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 
-	"github.com/ppacher/envel/pkg/bindings/callback"
+	"github.com/ppacher/envel/pkg/callback"
 	tpshp "github.com/ppacher/tplink-smart-home-protocol"
 	lua "github.com/yuin/gopher-lua"
 )
