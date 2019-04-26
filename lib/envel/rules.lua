@@ -19,6 +19,18 @@ rule{
     end
 }
 
+
+local signal = require("envel.signal")
+local f = signal()
+rule {
+    name = "emit when called",
+    trigger = onInterval(100),
+    action = signal.emit(f, "changed", {"foobar"})
+}
+
+-- will print "foobar" evenry 100 seconds
+f:connect_signal("changed", function(e) print(e) end )
+
 --]]
 
 local rule_class = {}

@@ -33,7 +33,14 @@ local mqtt = mqtt_connect {
 
 local weather = owm(config.owm.key, config.owm.location, config.owm.units)
 
+-- Assuming we have connected our laundry washing machine to
+-- a TP-Link HS1xx plug (featuring an energy meter like the HS110)
+
+-- create a client for the plug itself
 local plug = hs1xx(config.plug.ip)
+
+-- create a sensor for each property (signal) the plug exposes
+-- this will automatically export the values for prometheus
 local plug_sensor = device.sensor {
     name = "laundry",
     default_metric = "gauge",
@@ -82,6 +89,9 @@ local plug_sensor = device.sensor {
     }
 }
 
+-- create a sensor device for the openweathermap client
+-- it already provides a set of common sensor properties
+-- using client:common_sensor_properties()
 local weather_sensor = device.sensor {
     name  = "weather",
     default_metric = "gauge",
@@ -110,9 +120,9 @@ local publish_changes = function(sensor, prop_name, value, prop_def)
     }
 end
 
-
 plug_sensor:connect_signal("sensor::property", publish_changes)
 weather_sensor:connect_signal("sensor::property", publish_changes)
+
 -- }}
 
 -- {{ Notifications
@@ -151,7 +161,7 @@ end)
 
 -- }}
 
--- {{ Rules
+-- {{ Rules (experimental)
 rule {
     name = "test rule",
     trigger = {
@@ -167,9 +177,9 @@ rule {
         notify{title = "foo", text = "it works"}
     end
 }
-
 -- }}
 
+-- start watching (polling) current weather conditions
 weather:watch()
 
 -- poll the relay status every 3 seconds
