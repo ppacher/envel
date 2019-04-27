@@ -31,5 +31,5 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(totalJobs, queuedJobs, jobExecDuration)
+	prometheus.MustRegister(totalJobs, queuedJobs, jobExecDuration, queueIdle)
 }
