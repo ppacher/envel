@@ -94,6 +94,8 @@ func (q *Queue) Pop() Task {
 func (q *Queue) PopWait(ctx context.Context) Task {
 	next := q.Pop()
 	if next == nil {
+		queueIdle.With(prometheus.Labels{"queue": q.name, "loop": q.loopName}).Inc()
+
 		select {
 		case <-q.waitCh:
 			return q.PopWait(ctx)

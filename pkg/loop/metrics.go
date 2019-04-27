@@ -5,6 +5,11 @@ import (
 )
 
 var (
+	queueIdle = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "queue_idle",
+		Help: "Counter increased when no jobs are available",
+	}, []string{"loop", "queue"})
+
 	totalJobs = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "jobs_total",
 		Help: "total number of jobs",

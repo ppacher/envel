@@ -18,7 +18,6 @@ require (
 	github.com/layeh/gopher-luar v1.0.5
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/ppacher/go-dbus-keyring v1.0.0
-	github.com/ppacher/hs1xxplug v0.0.0-20180927100741-19ffbf784dd6
 	github.com/ppacher/tplink-hs1xx v0.0.0-20190416072921-e6f907e614a1
 	github.com/ppacher/tplink-smart-home-protocol v0.0.0-20190416075011-2e72bb04c929
 	github.com/prometheus/client_golang v0.9.2
