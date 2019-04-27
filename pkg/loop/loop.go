@@ -41,7 +41,10 @@ type loop struct {
 
 	queue *Queue
 
-	wg      sync.WaitGroup
+	exitQueue *Queue
+
+	wg sync.WaitGroup
+
 	running bool
 }
 
@@ -68,8 +71,9 @@ func New(opts *Options) (Loop, error) {
 	vm := lua.NewState()
 
 	l := &loop{
-		vm:    vm,
-		queue: NewQueue("default", "jobs"),
+		vm:        vm,
+		queue:     NewQueue("default", "jobs"),
+		exitQueue: NewQueue("default", "exit"),
 	}
 
 	ud := vm.NewUserData()
@@ -77,6 +81,7 @@ func New(opts *Options) (Loop, error) {
 
 	vm.SetGlobal("__loop", ud)
 	vm.SetGlobal("__schedule", vm.NewFunction(l.scheduleLua))
+	vm.SetGlobal("on_exit", vm.NewFunction(l.scheduleLuaOnExit))
 
 	if opts != nil {
 		if opts.InitVM != nil {
@@ -101,6 +106,19 @@ func (l *loop) scheduleLua(state *lua.LState) int {
 	fn := state.CheckFunction(1)
 
 	l.Schedule(func(state *lua.LState) {
+		state.CallByParam(lua.P{
+			Fn:   fn,
+			NRet: 0,
+		})
+	})
+
+	return 0
+}
+
+func (l *loop) scheduleLuaOnExit(state *lua.LState) int {
+	fn := state.CheckFunction(1)
+
+	l.exitQueue.Push(func(state *lua.LState) {
 		state.CallByParam(lua.P{
 			Fn:   fn,
 			NRet: 0,
@@ -151,13 +169,26 @@ func (l *loop) run(ctx context.Context) {
 	l.running = true
 
 	for l.running {
-		job := l.queue.PopWait(ctx)
+		job, err := l.queue.PopWait(ctx)
+		if err != nil {
+			break
+		}
+
 		if ctx.Err() != nil {
 			l.running = false
 			break
 		}
 
 		l.runJob(job)
+	}
+
+	for {
+		item := l.exitQueue.Pop()
+		if item == nil {
+			break
+		}
+
+		l.runJob(item)
 	}
 }
 

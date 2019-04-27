@@ -12,7 +12,7 @@ func Test_ObjectCall(t *testing.T) {
 
 	l.ScheduleAndWait(func(L *lua.LState) {
 		err := L.DoString(`
-		o = require("envel.dbus").object.bus()
+		o = require("envel.bindings.dbus").object.bus()
 		o:call("org.freedesktop.DBus.ListNames", 0, function(res, err)
 			done()	
 

@@ -166,7 +166,7 @@ func Test_ReaderLineCallback(t *testing.T) {
 
 	l.ScheduleAndWait(func(L *lua.LState) {
 		res := L.GetGlobal("res").(lua.LString)
-		if res.String() != "hello\n" {
+		if res.String() != "hello" {
 			t.Errorf("expect hello but got %#v", res)
 		}
 	})

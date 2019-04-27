@@ -8,6 +8,13 @@ local notify = dbus.notify
 local config = require("config")
 local new_pushover = require("pushover")
 local rule = require("envel.rules")
+local on_exit = _G.on_exit
+
+-- on_exit allows to configure shutdown handlers when envel's event loop is stopped
+-- make sure to not use any features that schedule new tasks on the event loop (i.e. timers, spawn, http, ...)
+on_exit(function()
+    print("good bye")
+end)
 
 local notifier = new_pushover({
     user  = config.pushover.user,

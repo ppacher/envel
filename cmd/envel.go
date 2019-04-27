@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ppacher/envel/pkg/plugin"
 
@@ -18,7 +21,7 @@ import (
 	"github.com/ppacher/envel/pkg/core"
 	"github.com/ppacher/envel/pkg/http"
 	"github.com/ppacher/envel/pkg/loop"
-	"github.com/ppacher/envel/pkg/signal"
+	signalBinding "github.com/ppacher/envel/pkg/signal"
 
 	"github.com/sirupsen/logrus"
 	json "layeh.com/gopher-json"
@@ -63,7 +66,7 @@ func main() {
 	l, err := loop.New(&loop.Options{
 		InitVM: func(L *lua.LState) error {
 			core.OpenCore(L)
-			signal.OpenSignal(L)
+			signalBinding.OpenSignal(L)
 			json.Preload(L)
 			http.Preload(L)
 
@@ -93,5 +96,15 @@ func main() {
 
 	l.Start(context.Background())
 
+	exitSig := make(chan os.Signal, 1)
+	signal.Notify(exitSig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	<-exitSig
+
+	logrus.Info("shutting down")
+
+	l.Stop()
 	l.Wait()
+
+	logrus.Info("shutdown completed")
 }

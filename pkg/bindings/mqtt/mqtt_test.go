@@ -13,7 +13,7 @@ func Test_ObjectCall(t *testing.T) {
 
 	l.ScheduleAndWait(func(L *lua.LState) {
 		err := L.DoString(`
-		c = require("envel.mqtt")({
+		c = require("envel.bindings.mqtt")({
 			broker = "tcp://localhost:1883",
 			client_id="mqtt-test"
 		})

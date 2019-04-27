@@ -12,7 +12,7 @@ func Test_Notify(t *testing.T) {
 
 	l.ScheduleAndWait(func(L *lua.LState) {
 		err := L.DoString(`
-		notify = require("envel.dbus").notify
+		notify = require("envel.bindings.dbus").notify
 
 		notify({
 			title = "Foobar",
