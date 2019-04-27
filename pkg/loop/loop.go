@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -36,10 +37,12 @@ type Options struct {
 
 // loop is the actual implementation of the Loop interface
 type loop struct {
-	vm       *lua.LState
-	wg       sync.WaitGroup
-	taskChan chan Task
-	running  bool
+	vm *lua.LState
+
+	queue *Queue
+
+	wg      sync.WaitGroup
+	running bool
 }
 
 // LGet returns the current event loop from the given VM
@@ -65,8 +68,8 @@ func New(opts *Options) (Loop, error) {
 	vm := lua.NewState()
 
 	l := &loop{
-		vm:       vm,
-		taskChan: make(chan Task, 1000),
+		vm:    vm,
+		queue: NewQueue("default", "jobs"),
 	}
 
 	ud := vm.NewUserData()
@@ -110,10 +113,11 @@ func (l *loop) scheduleLua(state *lua.LState) int {
 // Schedule schedules a task to be executed on the loop
 func (l *loop) Schedule(task Task) {
 	l.wg.Add(1)
-	l.taskChan <- func(L *lua.LState) {
+
+	l.queue.Push(func(L *lua.LState) {
 		defer l.wg.Done()
 		task(L)
-	}
+	})
 }
 
 // ScheduleAndWait schedules a task and waits for it to be executed
@@ -147,11 +151,21 @@ func (l *loop) run(ctx context.Context) {
 	l.running = true
 
 	for l.running {
-		select {
-		case job := <-l.taskChan:
-			job(l.vm)
-		case <-ctx.Done():
+		job := l.queue.PopWait(ctx)
+		if ctx.Err() != nil {
 			l.running = false
+			break
 		}
+
+		l.runJob(job)
 	}
+}
+
+func (l *loop) runJob(task Task) {
+	timer := prometheus.NewTimer(prometheus.ObserverFunc(jobExecDuration.With(prometheus.Labels{
+		"loop": "default",
+	}).Observe))
+	defer timer.ObserveDuration()
+
+	task(l.vm)
 }
