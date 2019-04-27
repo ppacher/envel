@@ -3,6 +3,7 @@ package loop
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -94,7 +95,11 @@ func (q *Queue) Pop() Task {
 func (q *Queue) PopWait(ctx context.Context) Task {
 	next := q.Pop()
 	if next == nil {
-		queueIdle.With(prometheus.Labels{"queue": q.name, "loop": q.loopName}).Inc()
+		start := time.Now()
+
+		defer func() {
+			queueIdle.With(prometheus.Labels{"queue": q.name, "loop": q.loopName}).Add(float64(time.Now().Sub(start).Seconds()))
+		}()
 
 		select {
 		case <-q.waitCh:
