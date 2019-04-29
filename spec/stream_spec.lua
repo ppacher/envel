@@ -3,6 +3,9 @@ local stream = require("envel.stream")
 local Subscriber, Subscription, Observable = stream.Subscriber, stream.Subscription, stream.Observable
 local noop = function() end
 
+-- add all available operators
+require("envel.stream.operators")
+
 describe("envel.stream", function()
 
     describe("subscriptions", function()
@@ -208,6 +211,28 @@ describe("envel.stream", function()
 
             _observer:next(1)
             assert.are.equals(emitted, 2)
+        end)
+    end)
+
+    describe("operators", function()
+        local observer
+        local obs = Observable.create(function(_observer) observer = _observer end)
+
+        describe("map", function()
+            it("should allow trasforming values", function()
+                local values = {}
+                obs:map(function(value)
+                    return value + 1
+                end):subscribe(function(_, value)
+                    table.insert(values, value)
+                end)
+
+                observer:next(3)
+                observer:next(10)
+
+                assert.are.same({4, 11}, values)
+
+            end)
         end)
     end)
 end)
