@@ -9,6 +9,63 @@ local config = require("config")
 local new_pushover = require("pushover")
 local rule = require("envel.rules")
 local on_exit = _G.on_exit
+local stream = require("envel.stream.init")
+local signal = require("envel.signal")
+
+print("----- start subscription test ------")
+
+local p1 = stream.Subscription.create(function() print("p1") end)
+local p2 = stream.Subscription.create(function() print("p2") end)
+local p3 = stream.Subscription.create(function() print("p3") end)
+
+p2:add(p3)
+p1:add(p2)
+p1:add(p2)
+
+-- this should be ignored
+p1:add(p1)
+
+p2:add(function()print("teardown")end)
+
+p3:unsubscribe()
+p1:unsubscribe()
+
+
+print("----- end subscription test ------")
+print("----- start observable test ------")
+
+local o1 = stream.Observable.create(function(observer)
+    print("created")
+    observer:next(1)
+    observer:next(2)
+    observer:next(3)
+    observer:complete()
+end)
+
+local o2 = o1:lift(function(sink, source)
+    local sub = stream.Subscriber.create(sink)
+    local next = sub.next
+    sub.next = function(sub, value)
+        value = value + 1
+        next(sub, value)
+    end
+
+    return source:subscribe(sub)
+end)
+
+local s1 = o2:subscribe(
+    function(_, value)
+        print("next: "..tostring(value))
+    end,
+    function(_, err) print(err) end,
+    function() print("complete") end
+)
+
+print("closed: "..tostring(s1.closed))
+
+print("----- end observable test ------")
+
+os.exit()
 
 -- on_exit allows to configure shutdown handlers when envel's event loop is stopped
 -- make sure to not use any features that schedule new tasks on the event loop (i.e. timers, spawn, http, ...)
@@ -187,15 +244,15 @@ rule {
 -- }}
 
 -- start watching (polling) current weather conditions
-weather:watch()
+--weather:watch()
 
 -- poll the relay status every 3 seconds
-plug:watch_relay(3)
+--plug:watch_relay(3)
 
 -- poll the current power consumption (realtime) every 10 seconds
 -- a lower value seems the cause troubles with the HS110 plug not
 -- responding to calls
-plug:watch_realtime(10)
+--plug:watch_realtime(10)
 
 -- allow the plug (laundry washer) to be controlled via MQTT
 mqtt:subscribe {

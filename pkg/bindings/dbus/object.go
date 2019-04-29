@@ -101,7 +101,7 @@ func objectCall(ud *lua.LUserData, method string, flags byte, fn *lua.LFunction,
 		var x interface{}
 		err := call.Store(&x)
 
-		l.Schedule(func(L *lua.LState) {
+		cb.From(func(L *lua.LState) []lua.LValue {
 			val := luar.New(L, x)
 			args := []lua.LValue{
 				val,
@@ -111,12 +111,7 @@ func objectCall(ud *lua.LUserData, method string, flags byte, fn *lua.LFunction,
 				args = append(args, lua.LString(err.Error()))
 			}
 
-			go func() {
-				err := <-cb.Do(args...)
-				if err != nil {
-					panic(err)
-				}
-			}()
+			return args
 		})
 	}()
 }

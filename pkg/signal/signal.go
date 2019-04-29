@@ -233,9 +233,7 @@ func (sig *Signal) Emit(name string, args ...lua.LValue) {
 	sig.lock.RLock()
 	defer sig.lock.RUnlock()
 	for _, cb := range sig.listeners[name] {
-		go func(cb callback.Callback) {
-			<-cb.Do(args...)
-		}(cb)
+		cb.Do(args...)
 	}
 }
 
@@ -245,9 +243,7 @@ func (sig *Signal) EmitFrom(name string, fn func(*lua.LState) []lua.LValue) {
 	sig.lock.RLock()
 	defer sig.lock.RUnlock()
 	for _, cb := range sig.listeners[name] {
-		go func(cb callback.Callback) {
-			<-cb.From(fn)
-		}(cb)
+		cb.From(fn)
 	}
 }
 
