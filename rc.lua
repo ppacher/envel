@@ -11,6 +11,8 @@ local rule = require("envel.rules")
 local on_exit = _G.on_exit
 local stream = require("envel.stream.init")
 local signal = require("envel.signal")
+local stream = require("envel.stream")
+
 
 print("----- start subscription test ------")
 

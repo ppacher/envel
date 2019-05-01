@@ -81,8 +81,8 @@ func main() {
 			// TODO(ppacher): this is ugly ...
 			for _, p := range *loadPaths {
 				L.DoString(fmt.Sprintf(`
-				package.path = "%s" .. [[/?.lua;]] .. package.path	
-				`, p))
+				package.path = "%s" .. [[/?.lua;]] .. "%s" .. [[/?/init.lua;]] .. package.path	
+				`, p, p))
 			}
 
 			err := L.DoFile(*filePath)
