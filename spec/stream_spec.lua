@@ -1,15 +1,13 @@
 local describe, it, assert = describe, it, assert
 local stream = require("envel.stream")
-local Subscriber, Subscription, Observable = stream.Subscriber, stream.Subscription, stream.Observable
+local Subscriber, Subscription, Observable, Subject, AsyncSubject = stream.Subscriber, stream.Subscription, stream.Observable, stream.Subject, stream.AsyncSubject
 local noop = function() end
 
 -- add all available operators
 require("envel.stream.operators")
 
 describe("envel.stream", function()
-
     describe("subscriptions", function()
-
         it("should run teardown only once", function()
             local cleanup = 0
             local sub = Subscription.create(function()
@@ -214,6 +212,61 @@ describe("envel.stream", function()
         end)
     end)
 
+    describe("subject", function()
+        it("should emit values to all subscribers", function()
+            local subject = Subject.create()
+
+            local s1_called = 0
+            subject:subscribe(function() s1_called = s1_called + 1 end)
+            local s2_called = 0
+            subject:subscribe(function() s2_called = s2_called + 1 end)
+
+            subject:next(1)
+            subject:next(1)
+
+            assert.are.equals(s1_called, 2)
+            assert.are.equals(s2_called, 2)
+        end)
+
+        it('should no emit to unsubscribed subscriptions', function()
+            local subject = Subject.create()
+
+            local s1_called = 0
+            subject:subscribe(function() s1_called = s1_called + 1 end)
+            local s2_called = 0
+            local s2 = subject:subscribe(function() s2_called = s2_called + 1 end)
+
+            subject:next(1)
+            s2:unsubscribe()
+            subject:next(1)
+
+            assert.are.equals(s1_called, 2)
+            assert.are.equals(s2_called, 1)
+        end)
+    end)
+
+    describe("AsyncSubject", function()
+        it("should only emit when completed", function()
+            local called = 0
+            local handler = function() called = called + 1 end
+
+            local subj = AsyncSubject.create()
+
+            subj:subscribe(handler)
+
+            subj:next(1)
+            subj:next(1)
+            subj:next(1)
+            subj:complete()
+
+            assert.are.equals(1, called)
+
+            -- should emit immediately as the async subject has completed
+            subj:subscribe(handler)
+            assert.are.equals(2, called)
+        end)
+    end)
+
     describe("operators", function()
         local observer
         local obs = Observable.create(function(_observer) observer = _observer end)
@@ -232,6 +285,56 @@ describe("envel.stream", function()
 
                 assert.are.same({4, 11}, values)
 
+            end)
+        end)
+
+        describe("multicast", function()
+            it("should multicast values to all subscribers, makeing it hot", function()
+                local trigger = nil
+                local obs = Observable.create(function(observer)
+                    trigger = function()
+                        observer:next(2)
+                    end
+
+                    observer:next(1)
+                end):multicast()
+
+                local s1_called = 0
+                local s1 = obs:subscribe(function() s1_called = s1_called + 1 end)
+
+                assert.are.equals(s1_called, 1)
+
+                local s2_called = 0
+                local s2 = obs:subscribe(function() s2_called = s2_called + 1 end)
+
+                trigger()
+                trigger()
+
+                assert.are.equals(s1_called, 3)
+                assert.are.equals(s2_called, 2)
+            end)
+
+            it("should unsubscribe from source when refcount drops to zero", function()
+                local subscribed, unsubscribed = false, false
+                local obs = Observable.create(function(observer)
+                    subscribed = true
+                    return function() unsubscribed = true end
+                end):multicast()
+
+                assert.False(subscribed)
+                assert.False(unsubscribed)
+
+                local s1 = obs:subscribe()
+                assert.True(subscribed)
+                assert.False(unsubscribed)
+
+                local s2 = obs:subscribe()
+                assert.False(unsubscribed)
+
+                s1:unsubscribe()
+                assert.False(unsubscribed)
+                s2:unsubscribe()
+                assert.True(unsubscribed)
             end)
         end)
     end)

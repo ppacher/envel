@@ -5,12 +5,11 @@ local Observable = {}
 Observable.__index = Observable
 Observable.__tostring = function() return 'Observable' end
 
-function Observable.create(producer)
-    local self = {
-        _subscribe = producer,
-        _source = nil,
-        _operator = nil,
-    }
+function Observable.create(producer, obj)
+    local self = obj or {}
+    self._subscribe = producer
+    self._source = nil
+    self._operator = nil
 
     return setmetatable(self, Observable)
 end
@@ -29,7 +28,7 @@ end
 function Observable:subscribe(observerOrNext, onError, onCompleted)
     local operator = self._operator
     local sink = subscription.to_subscriber(observerOrNext, onError, onCompleted)
-    
+
     if operator then
         sink:add(operator(sink, self._source))
     elseif self._source then

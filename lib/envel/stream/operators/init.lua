@@ -1,1 +1,6 @@
 require("envel.stream.operators.map")
+require("envel.stream.operators.filter")
+require("envel.stream.operators.distinctUntilChanged")
+require("envel.stream.operators.debounceTime")
+require("envel.stream.operators.share")
+require("envel.stream.operators.merge")
