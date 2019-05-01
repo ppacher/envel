@@ -1,6 +1,18 @@
 local describe, it, assert = describe, it, assert
 local stream = require("envel.stream")
-local Subscriber, Subscription, Observable, Subject, AsyncSubject = stream.Subscriber, stream.Subscription, stream.Observable, stream.Subject, stream.AsyncSubject
+local Subscriber,
+      Subscription,
+      Observable,
+      Subject,
+      AsyncSubject,
+      ConnectableObservable =
+        stream.Subscriber,
+        stream.Subscription,
+        stream.Observable,
+        stream.Subject,
+        stream.AsyncSubject,
+        stream.ConnectableObservable
+
 local noop = function() end
 
 -- add all available operators
@@ -267,6 +279,72 @@ describe("envel.stream", function()
         end)
     end)
 
+    describe("ConnectableObservable", function()
+        it("should subscribe upon connect and complete with source", function()
+            local source_subscribed = false
+            local source_unsubscribed = false
+            local source_observer = nil
+            local source = Observable.create(function(observer)
+                source_subscribed = true
+                source_observer = observer
+                return function()
+                    source_unsubscribed = true
+                end
+            end)
+
+            local s1_emitted = 0
+            local s2_emitted = 0
+
+            local connectable = ConnectableObservable.create(source)
+            local sub1 = connectable:subscribe(function()
+                s1_emitted = s1_emitted + 1
+            end)
+
+            assert.False(source_subscribed)
+            local sub2 = connectable:subscribe(function()
+                s2_emitted = s2_emitted + 1
+            end)
+
+            assert.False(source_subscribed)
+
+            local connection = connectable:connect()
+            assert.True(source_subscribed)
+            assert.False(source_unsubscribed)
+
+            source_observer:next(1)
+            source_observer:next(1)
+
+            assert.are.equals(2, s1_emitted)
+            assert.are.equals(2, s2_emitted)
+
+            sub2:unsubscribe()
+
+            source_observer:next(1)
+            assert.are.equals(3, s1_emitted)
+            assert.are.equals(2, s2_emitted)
+
+
+            connection:unsubscribe()
+            assert.True(source_unsubscribed)
+            source_subscribed = false
+            source_unsubscribed = false
+            source_observer = nil
+
+            connectable:connect()
+            assert.True(source_subscribed)
+            assert.False(source_unsubscribed)
+
+            source_observer:next(1)
+            assert.are.equals(4, s1_emitted)
+            assert.are.equals(2, s2_emitted)
+
+            source_observer:complete()
+            assert.True(source_unsubscribed)
+
+            sub1:unsubscribe()
+        end)
+    end)
+
     describe("operators", function()
         local observer
         local obs = Observable.create(function(_observer) observer = _observer end)
@@ -289,7 +367,7 @@ describe("envel.stream", function()
         end)
 
         describe("multicast", function()
-            it("should multicast values to all subscribers, makeing it hot", function()
+            it("should publish values to all subscribers", function()
                 local trigger = nil
                 local obs = Observable.create(function(observer)
                     trigger = function()
@@ -298,6 +376,37 @@ describe("envel.stream", function()
 
                     observer:next(1)
                 end):multicast()
+
+                assert.are.equals("ConnectableObservable", tostring(obs))
+
+                local s1_called = 0
+                local s1 = obs:subscribe(function() s1_called = s1_called + 1 end)
+
+                obs:connect()
+
+                assert.are.equals(s1_called, 1)
+
+                local s2_called = 0
+                local s2 = obs:subscribe(function() s2_called = s2_called + 1 end)
+
+                trigger()
+                trigger()
+
+                assert.are.equals(s1_called, 3)
+                assert.are.equals(s2_called, 2)
+            end)
+        end)
+
+        describe("share", function()
+            it("should share values to all subscribers, makeing it hot", function()
+                local trigger = nil
+                local obs = Observable.create(function(observer)
+                    trigger = function()
+                        observer:next(2)
+                    end
+
+                    observer:next(1)
+                end):share()
 
                 local s1_called = 0
                 local s1 = obs:subscribe(function() s1_called = s1_called + 1 end)
@@ -319,7 +428,7 @@ describe("envel.stream", function()
                 local obs = Observable.create(function(observer)
                     subscribed = true
                     return function() unsubscribed = true end
-                end):multicast()
+                end):share()
 
                 assert.False(subscribed)
                 assert.False(unsubscribed)

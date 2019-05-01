@@ -1,6 +1,6 @@
 local Observable = require("envel.stream.observable")
 local Subscription = require("envel.stream.subscription").Subscription
-local Subscriber = require("envel.stream.subscription").Subscriber
+local SubjectSubscriber = require("envel.stream.subject_subscriber")
 
 local AnonymousSubject = {}
 local Subject = {}
@@ -85,34 +85,7 @@ function Subject:__subscribe(sink)
         return sink
     end
 
-    local subscriber = Subscriber.create(sink)
-    table.insert(self.observers, subscriber)
-
-    subscriber._subject = self
-
-    -- wrap the unsubscribe method of the new subscriber so we delete our self
-    -- form the observers list
-    function subscriber:unsubscribe()
-        Subscriber.unsubscribe(self)
-
-        local subject = self._subject
-        self._subject = nil
-
-        self.closed = true
-        if not subject.observers or #subject.observers == 0 or subject.is_stopped or subject.closed then
-            return
-        end
-
-        local new_observers = {}
-        for _, i in ipairs(subject.observers) do
-            if i ~= self then
-                table.insert(new_observers, i)
-            end
-        end
-        subject.observers = new_observers
-    end
-
-    return subscriber
+    return SubjectSubscriber.create(sink, self)
 end
 
 function AnonymousSubject.create(destination, source)
