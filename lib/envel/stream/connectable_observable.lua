@@ -33,6 +33,9 @@ function ConnectableObservable.create(source, subjectOrFactory)
     -- The subject or a factory function
     instance._subjectOrFactory = subjectOrFactory
 
+    -- The number of references to the connectable observable
+    instance._refCount = 0
+
     return instance
 end
 
@@ -77,5 +80,24 @@ function ConnectableObservable:getSubject()
     return self._subject
 end
 
+function ConnectableObservable:refCount()
+    return self:lift(function(sink, source)
+        local subscription = source:subscribe(sink)
+        self._refCount = self._refCount + 1
+        if self._connection == nil then
+            self:connect()
+        end
+
+        subscription:add(function()
+            self._refCount = self._refCount - 1
+
+            if self._refCount <= 0 then
+                self._connection:unsubscribe()
+            end
+        end)
+
+        return subscription
+    end)
+end
 
 return ConnectableObservable

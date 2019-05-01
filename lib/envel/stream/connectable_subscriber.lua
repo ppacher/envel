@@ -35,6 +35,10 @@ function ConnectableSubscriber:unsubscribe()
         connectable._subject = nil
         connectable._hasCompleted = true
 
+        -- TODO(ppacher): are we sure that we need
+        -- to reset the refCount?
+        connectable._refCount = 0
+
         if connection then
             connection:unsubscribe()
         end
