@@ -71,10 +71,9 @@ function spawn.watch(args)
         callback = function(t1)
             -- we stop the timer and restart it once the command finishes
             -- so we don't run the command multiple times if it takes longer to
-            -- execute than the timeout configured
-
-
+            -- execute than the configured timeout
             t1:stop()
+
             if type(on_start) == 'function' then on_start() end
             spawn.with_line_callback(cmd, on_line, function(...)
                 if type(on_done) == 'function' then on_done(unpack(arg)) end

@@ -131,6 +131,10 @@ function module.sensor(cfg)
                 error('Only configured sensor values may be updated')
             end
 
+            if type(sensor.__allowed_properties[k].before_set) == 'function' then
+                v = sensor.__allowed_properties[k].before_set(v)
+            end
+
             -- if we should even emit the value if it's the same as before we always
             -- set has_changed to true
             local has_changed = sensor.__properties[k] ~= v
@@ -171,21 +175,18 @@ function module.sensor(cfg)
                 has_changed = v <= lower_boundary or v >= upper_boundary
             end
 
-            if type(sensor.__allowed_properties[k].before_set) == 'function' then
-                v = sensor.__allowed_properties[k].before_set(v)
-            end
-
-            if has_changed then
-                if sensor.__allowed_properties[k].__metric and type(v) == 'number' then
-                    sensor.__allowed_properties[k].__metric:set(v)
-                end
+            if has_changed or sensor.__allowed_properties[k].distinct == false then
+                sensor.__properties[k] = v
 
                 -- if distict is set, only emit a signal if the property changed
-                if sensor.__allowed_properties[k].distinct == false and sensor.__properties[k] ~= v then
+                if sensor.__allowed_properties[k].distinct == false or has_changed then
                     t:emit_signal("sensor::property", sensor, k, v, sensor.__allowed_properties[k])
                     t:emit_signal("property::"..k, v)
                 end
-                sensor.__properties[k] = v
+
+                if sensor.__allowed_properties[k].__metric and type(v) == 'number' then
+                    sensor.__allowed_properties[k].__metric:set(v)
+                end
             end
         end,
 
