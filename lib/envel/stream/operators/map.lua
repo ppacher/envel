@@ -14,3 +14,15 @@ function Observable:map(handler)
         return source:subscribe(child)
     end)
 end
+
+function Observable:select_arg(index)
+    return self:map(function(...)
+        return ({...})[index]
+    end)
+end
+
+function Observable:path(p)
+    return self:map(function(value)
+        return value[p]
+    end)
+end
