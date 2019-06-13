@@ -9,65 +9,50 @@ local config = require("config")
 local new_pushover = require("pushover")
 local rule = require("envel.rules")
 local on_exit = _G.on_exit
-local stream = require("envel.stream.init")
-local signal = require("envel.signal")
 local stream = require("envel.stream")
+local from_signal = stream.from_signal
+local smarthome = require("envel.smarthome")
 
+-- add the stream operators
+require 'envel.stream.operators'
 
-print("----- start subscription test ------")
+local mqtt = mqtt_connect {
+    broker = "tcp://localhost:1883",
+    client_id = "envel",
+}
+mqtt:publish({topic="envel", payload="started"})
 
-local p1 = stream.Subscription.create(function() print("p1") end)
-local p2 = stream.Subscription.create(function() print("p2") end)
-local p3 = stream.Subscription.create(function() print("p3") end)
+local plug = hs1xx(config.plug.ip)
 
-p2:add(p3)
-p1:add(p2)
-p1:add(p2)
+local home = smarthome.home {
+    mqtt = mqtt,
+}
 
--- this should be ignored
-p1:add(p1)
+local plug_subject = stream.Subject.create()
 
-p2:add(function()print("teardown")end)
+local test, err = smarthome.interface {
+    name = 'hs100_1',
+    location = 'bathroom',
+    description = 'A test interface',
+    metrics = 'gauge',
+    items = {
+        voltage = {
+            unit = 'V',
+            source = plug_subject,
+        },
+        total = {
+            unit = 'Wh',
+            source = from_signal(plug, 'realtime')
+                        :path('total')
+        },
+    }
+}
+assert(test, err)
 
-p3:unsubscribe()
-p1:unsubscribe()
+test:bind(home)
+test:set_connected()
 
-
-print("----- end subscription test ------")
-print("----- start observable test ------")
-
-local o1 = stream.Observable.create(function(observer)
-    print("created")
-    observer:next(1)
-    observer:next(2)
-    observer:next(3)
-    observer:complete()
-end)
-
-local o2 = o1:lift(function(sink, source)
-    local sub = stream.Subscriber.create(sink)
-    local next = sub.next
-    sub.next = function(sub, value)
-        value = value + 1
-        next(sub, value)
-    end
-
-    return source:subscribe(sub)
-end)
-
-local s1 = o2:subscribe(
-    function(_, value)
-        print("next: "..tostring(value))
-    end,
-    function(_, err) print(err) end,
-    function() print("complete") end
-)
-
-print("closed: "..tostring(s1.closed))
-
-print("----- end observable test ------")
-
-os.exit()
+--os.exit()
 
 -- on_exit allows to configure shutdown handlers when envel's event loop is stopped
 -- make sure to not use any features that schedule new tasks on the event loop (i.e. timers, spawn, http, ...)
@@ -92,10 +77,6 @@ notifier:notify({
 })
 --]]
 
-local mqtt = mqtt_connect {
-    broker = "tcp://localhost:1883",
-    client_id = "envel",
-}
 
 local weather = owm(config.owm.key, config.owm.location, config.owm.units)
 
@@ -168,6 +149,7 @@ local weather_sensor = device.sensor {
 -- {{ Publish all sensor values to MQTT using the topic sensors/{sensorName}/{propertyName}
 --    if the sensor has a unit, the value is sent as a JSON encoded string of format value+unit
 --    otherwise the value is sent JSON encoded as it is
+
 local publish_changes = function(sensor, prop_name, value, prop_def)
     print(sensor.name.."."..prop_name.." => "..tostring(value)..(prop_def.unit or ""))
     local payload
@@ -187,43 +169,13 @@ local publish_changes = function(sensor, prop_name, value, prop_def)
 end
 
 plug_sensor:connect_signal("sensor::property", publish_changes)
+plug_sensor:connect_signal("sensor::property", function(sensor, name, value)
+    if name == "voltage" then
+        print("next(", value, ")")
+        plug_subject:next(value)
+    end
+end)
 weather_sensor:connect_signal("sensor::property", publish_changes)
-
--- }}
-
--- {{ Notifications
-
--- notify me if todays minimum temperature is below 10°C
--- todo this may currently not work, check API docs for how temp_min
--- should be interpreted in current-temperature info
-local notified = false
-weather:connect_signal("weather::temp_min", function(temp)
-    if notified then return end
-    if temp <= 10 then
-        notified = true
-        notify {
-            title = "Weather",
-            text = "Min Temp for today: "..tostring(temp).."°C"
-        }
-    end
-end)
-
--- notify me if the watcher switches from running to not-running
--- this is determined by the power consumption of the laundry washer
--- in standby, it pulls around 1.7W while this should be considerably more
--- when running
-local washer_status = false
-plug_sensor:connect_signal("property::is_running", function(running)
-
-    if running == false and running ~= washer_status then
-        notify {
-            title = "Home",
-            text = "Waschmaschine fertig",
-        }
-    end
-
-    washer_status = running
-end)
 
 -- }}
 
@@ -237,7 +189,7 @@ rule {
     },
     when = function()
         print("when")
-        return true
+        return false
     end,
     action = function()
         notify{title = "foo", text = "it works"}
@@ -254,7 +206,7 @@ rule {
 -- poll the current power consumption (realtime) every 10 seconds
 -- a lower value seems the cause troubles with the HS110 plug not
 -- responding to calls
---plug:watch_realtime(10)
+plug:watch_realtime(10)
 
 -- allow the plug (laundry washer) to be controlled via MQTT
 mqtt:subscribe {
